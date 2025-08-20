@@ -1,3 +1,5 @@
+Please use the [ARMSX2](https://github.com/ARMSX2/ARMSX2) fork of this project once it releases! It'll be the most up to date and functional version of this code!
+
 * PCSX2 - Android project
 * EE Recompiler x86 => arm64
 
