@@ -414,6 +414,8 @@ void normJumpCompile(mV, microFlagCycles& mFC, bool isEvilJump)
     {
 //        xLoadFarAddr(arg2reg, &mVUpBlock->pStateEnd);
         armMoveAddressToReg(RCX, &mVUpBlock->pStateEnd);
+//        armAsm->Ldr(RXVIXLSCRATCH, PTR_MVU(microVU[mVU.index].prog.IRinfo.pBlock));
+//        armAsm->Add(RCX, RXVIXLSCRATCH, offsetof(microBlock, pStateEnd));
     }
 
 	if (mVUup.eBit && isEvilJump) // E-bit EvilJump
@@ -442,7 +444,7 @@ void normJumpCompile(mV, microFlagCycles& mFC, bool isEvilJump)
 
 	mVUrestoreRegs(mVU);
 //	xJMP(gprT1q); // Jump to rec-code address
-    armAsm->Br(RAX);
+    armAsm->Br(gprT1q);
 }
 
 void normBranch(mV, microFlagCycles& mFC)
@@ -456,7 +458,7 @@ void normBranch(mV, microFlagCycles& mFC)
 		u32 tempPC = iPC;
         if (mVU.index && THREAD_VU1) {
 //            xTEST(ptr32[&vu1Thread.vuFBRST], (isVU1 ? 0x400 : 0x4));
-            armAsm->Tst(armLoadPtr(&vu1Thread.vuFBRST), (isVU1 ? 0x400 : 0x4));
+            armAsm->Tst(armLoadPtr(PTR_MVU(vu1Thread.vuFBRST)), (isVU1 ? 0x400 : 0x4));
         }
         else {
 //            xTEST(ptr32[&VU0.VI[REG_FBRST].UL], (isVU1 ? 0x400 : 0x4));
@@ -486,7 +488,7 @@ void normBranch(mV, microFlagCycles& mFC)
 		u32 tempPC = iPC;
         if (mVU.index && THREAD_VU1) {
 //            xTEST(ptr32[&vu1Thread.vuFBRST], (isVU1 ? 0x800 : 0x8));
-            armAsm->Tst(armLoadPtr(&vu1Thread.vuFBRST), (isVU1 ? 0x800 : 0x8));
+            armAsm->Tst(armLoadPtr(PTR_MVU(vu1Thread.vuFBRST)), (isVU1 ? 0x800 : 0x8));
         }
         else {
 //            xTEST(ptr32[&VU0.VI[REG_FBRST].UL], (isVU1 ? 0x800 : 0x8));
@@ -516,8 +518,10 @@ void normBranch(mV, microFlagCycles& mFC)
 		memcpy(&mVUpBlock->pStateEnd, &mVUregs, sizeof(microRegInfo));
 //		xLoadFarAddr(rax, &mVUpBlock->pStateEnd);
         armMoveAddressToReg(RAX, &mVUpBlock->pStateEnd);
+//        armAsm->Ldr(RXVIXLSCRATCH, PTR_MVU(microVU[mVU.index].prog.IRinfo.pBlock));
+//        armAsm->Add(RAX, RXVIXLSCRATCH, offsetof(microBlock, pStateEnd));
 //		xCALL((void*)mVU.copyPLState);
-        armEmitCall(reinterpret_cast<void*>(mVU.copyPLState));
+        armEmitCall(mVU.copyPLState);
 
 		mVUsetupBranch(mVU, mFC);
 		mVUendProgram(mVU, &mFC, 3);
@@ -557,7 +561,7 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 		u32 tempPC = iPC;
         if (mVU.index && THREAD_VU1) {
 //            xTEST(ptr32[&vu1Thread.vuFBRST], (isVU1 ? 0x800 : 0x8));
-            armAsm->Tst(armLoadPtr(&vu1Thread.vuFBRST), (isVU1 ? 0x800 : 0x8));
+            armAsm->Tst(armLoadPtr(PTR_MVU(vu1Thread.vuFBRST)), (isVU1 ? 0x800 : 0x8));
         }
         else {
 //            xTEST(ptr32[&VU0.VI[REG_FBRST].UL], (isVU1 ? 0x800 : 0x8));
@@ -575,7 +579,7 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 		}
 		mVUDTendProgram(mVU, &mFC, 2);
 //		xCMP(ptr16[&mVU.branch], 0);
-        armAsm->Cmp(armLdrsh(&mVU.branch), 0);
+        armAsm->Cmp(armLdrsh(PTR_MVU(microVU[mVU.index].branch)), a64::wzr);
 //		xForwardJump32 tJMP(xInvertCond((JccComparisonType)JMPcc));
         a64::Label tJMP;
         armAsm->B(&tJMP, a64::InvertCondition(JMPcc));
@@ -609,7 +613,7 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 		u32 tempPC = iPC;
         if (mVU.index  && THREAD_VU1) {
 //            xTEST(ptr32[&vu1Thread.vuFBRST], (isVU1 ? 0x400 : 0x4));
-            armAsm->Tst(armLoadPtr(&vu1Thread.vuFBRST), (isVU1 ? 0x400 : 0x4));
+            armAsm->Tst(armLoadPtr(PTR_MVU(vu1Thread.vuFBRST)), (isVU1 ? 0x400 : 0x4));
         }
         else {
 //            xTEST(ptr32[&VU0.VI[REG_FBRST].UL], (isVU1 ? 0x400 : 0x4));
@@ -627,7 +631,7 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 		}
 		mVUDTendProgram(mVU, &mFC, 2);
 //		xCMP(ptr16[&mVU.branch], 0);
-        armAsm->Cmp(armLdrsh(&mVU.branch), 0);
+        armAsm->Cmp(armLdrsh(PTR_MVU(microVU[mVU.index].branch)), a64::wzr);
 //		xForwardJump32 dJMP(xInvertCond((JccComparisonType)JMPcc));
         a64::Label dJMP;
         armAsm->B(&dJMP, a64::InvertCondition(JMPcc));
@@ -655,12 +659,14 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 		memcpy(&mVUpBlock->pStateEnd, &mVUregs, sizeof(microRegInfo));
 //		xLoadFarAddr(rax, &mVUpBlock->pStateEnd);
         armMoveAddressToReg(RAX, &mVUpBlock->pStateEnd);
+//        armAsm->Ldr(RXVIXLSCRATCH, PTR_MVU(microVU[mVU.index].prog.IRinfo.pBlock));
+//        armAsm->Add(RAX, RXVIXLSCRATCH, offsetof(microBlock, pStateEnd));
 //		xCALL((void*)mVU.copyPLState);
-        armEmitCall(reinterpret_cast<void*>(mVU.copyPLState));
+        armEmitCall(mVU.copyPLState);
 
 		mVUendProgram(mVU, &mFC, 3);
 //		xCMP(ptr16[&mVU.branch], 0);
-        armAsm->Cmp(armLdrsh(&mVU.branch), 0);
+        armAsm->Cmp(armLdrsh(PTR_MVU(microVU[mVU.index].branch)), a64::wzr);
 //		xForwardJump32 dJMP((JccComparisonType)JMPcc);
         a64::Label dJMP;
         armAsm->B(&dJMP, JMPcc);
@@ -694,7 +700,7 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 
 		mVUendProgram(mVU, &mFC, 2);
 //		xCMP(ptr16[&mVU.branch], 0);
-        armAsm->Cmp(armLdrsh(&mVU.branch), 0);
+        armAsm->Cmp(armLdrsh(PTR_MVU(microVU[mVU.index].branch)), a64::wzr);
 
 		incPC(3);
 //		xForwardJump32 eJMP(((JccComparisonType)JMPcc));
@@ -727,7 +733,7 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 	else // Normal Conditional Branch
 	{
 //		xCMP(ptr16[&mVU.branch], 0);
-        armAsm->Cmp(armLdrsh(&mVU.branch), 0);
+        armAsm->Cmp(armLdrsh(PTR_MVU(microVU[mVU.index].branch)), a64::wzr);
 
 		incPC(3);
 		microBlock* bBlock;
@@ -749,13 +755,11 @@ void condBranch(mV, microFlagCycles& mFC, a64::Condition JMPcc)
 		else
 		{
 //			s32* ajmp = xJcc32((JccComparisonType)JMPcc);
-            u8* ajmp = armGetCurrentCodePointer();
-
             ////////////////////////////////////////////////////////////
             a64::Label labelJump;
             armAsm->B(&labelJump, a64::InvertCondition(JMPcc));
-            ajmp = armGetCurrentCodePointer();
             armAsm->Nop();
+            s32* ajmp = (s32*)armGetCurrentCodePointer()-1;
             armBind(&labelJump);
             ////////////////////////////////////////////////////////////
 
@@ -802,7 +806,7 @@ void normJump(mV, microFlagCycles& mFC)
 
         if (THREAD_VU1) {
 //            xTEST(ptr32[&vu1Thread.vuFBRST], (isVU1 ? 0x400 : 0x4));
-            armAsm->Tst(armLoadPtr(&vu1Thread.vuFBRST), (isVU1 ? 0x400 : 0x4));
+            armAsm->Tst(armLoadPtr(PTR_MVU(vu1Thread.vuFBRST)), (isVU1 ? 0x400 : 0x4));
         }
         else {
 //            xTEST(ptr32[&VU0.VI[REG_FBRST].UL], (isVU1 ? 0x400 : 0x4));
@@ -835,7 +839,7 @@ void normJump(mV, microFlagCycles& mFC)
 
         if (mVU.index && THREAD_VU1) {
 //            xTEST(ptr32[&vu1Thread.vuFBRST], (isVU1 ? 0x800 : 0x8));
-            armAsm->Tst(armLoadPtr(&vu1Thread.vuFBRST), (isVU1 ? 0x800 : 0x8));
+            armAsm->Tst(armLoadPtr(PTR_MVU(vu1Thread.vuFBRST)), (isVU1 ? 0x800 : 0x8));
         }
         else {
 //            xTEST(ptr32[&VU0.VI[REG_FBRST].UL], (isVU1 ? 0x800 : 0x8));
